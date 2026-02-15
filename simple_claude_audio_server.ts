@@ -11,9 +11,11 @@ import {
 const app = express();
 app.use(express.json({ limit: "10mb" }));
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const MOCK_MODE = process.env.MOCK_MODE === "true";
+
+const anthropic = MOCK_MODE
+  ? (null as unknown as Anthropic)
+  : new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 function runAudioAnalysis(input: AnalyzeRawAudioSignalInput) {
   // Replace this with your actual DSP/ML inference.
@@ -93,6 +95,40 @@ app.post("/analyze", async (req, res) => {
   try {
     const toolInput = req.body;
 
+    if (MOCK_MODE) {
+      // Synthetic tool_use block — same shape Claude would return
+      const mockToolUseBlock = {
+        type: "tool_use" as const,
+        id: `mock_toolu_${Date.now()}`,
+        name: "analyze_raw_audio_signal" as const,
+        input: toolInput,
+      };
+
+      const validatedToolUse =
+        validateAnalyzeRawAudioSignalToolUse(mockToolUseBlock);
+      const analysisJson = runAudioAnalysis(validatedToolUse.input);
+
+      const toolResultEnvelope = {
+        type: "tool_result" as const,
+        tool_use_id: validatedToolUse.id,
+        content: [{ type: "json" as const, json: analysisJson }],
+      };
+
+      validateAnalyzeRawAudioSignalToolResultEnvelope(toolResultEnvelope);
+
+      return res.json({
+        mock: true,
+        tool_use: validatedToolUse,
+        tool_result_json: analysisJson,
+        claude_final: [
+          {
+            type: "text",
+            text: "[mock] Analysis complete. All validation passed.",
+          },
+        ],
+      });
+    }
+
     const messages: Anthropic.MessageParam[] = [
       {
         role: "user",
@@ -163,5 +199,7 @@ app.post("/analyze", async (req, res) => {
 
 const port = Number(process.env.PORT ?? 3000);
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  console.log(
+    `Server running at http://localhost:${port}${MOCK_MODE ? " (MOCK MODE)" : ""}`,
+  );
 });
