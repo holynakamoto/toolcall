@@ -1,5 +1,11 @@
 # toolcall
 
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)
+![Zod](https://img.shields.io/badge/Zod-3E67B1?logo=zod&logoColor=white)
+![Claude API](https://img.shields.io/badge/Claude_API-191919?logo=anthropic&logoColor=white)
+
 An Express server that demonstrates Claude's tool-use API with strict Zod validation. It exposes a single endpoint that orchestrates a two-turn conversation with Claude to analyze raw audio signals, validating every message boundary with Zod schemas.
 
 ## How the tool call works
